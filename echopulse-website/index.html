@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en" data-emotion="silence" data-tone="static">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EchoPulse · DiaLOGue</title>
+<style>
+:root{
+  --accent:#f7f5ef;
+  --accent-rgb:247,245,239;
+  --tone-glow:.14;
+  --paper:rgba(255,255,255,.78);
+  --muted:rgba(255,255,255,.36);
+  --line:rgba(255,255,255,.10);
+  --inflate:0;
+  --pulse:3.1s;
+  --tilt-x:0deg;
+  --tilt-y:0deg;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#050505;color:var(--paper);font-family:"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif}
+body{overflow-x:hidden}
+button,input,textarea{font:inherit}
+button{border:0}
+@keyframes breathe{0%,100%{opacity:.35;transform:translate(-50%,-50%) scale(.92)}50%{opacity:.9;transform:translate(-50%,-50%) scale(1.08)}}
+@keyframes drift{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(-1.3%,1%,0)}}
+@keyframes statusIn{from{opacity:0;transform:translate(-50%,9px)}to{opacity:1;transform:translate(-50%,0)}}
+.app{
+  min-height:100dvh;
+  position:relative;
+  isolation:isolate;
+  padding:26px clamp(18px,3.1vw,48px) 30px;
+  transition:background .55s ease;
+  background:
+    radial-gradient(circle at 51% 52%,rgba(var(--accent-rgb),.15),transparent 24%),
+    radial-gradient(circle at 78% 12%,rgba(255,255,255,.04),transparent 26%),
+    #050505;
+}
+.app::before{content:"";position:fixed;inset:-12%;z-index:-2;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.024) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:58px 58px;mask-image:radial-gradient(circle at 50% 49%,#000 0%,transparent 72%);animation:drift 18s ease-in-out infinite}
+.app::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.70),transparent 24%,transparent 74%,rgba(0,0,0,.68)),radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.06),transparent 45%)}
+.topbar{height:58px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;z-index:10}
+.brand{display:flex;align-items:baseline;gap:14px;min-width:0}
+.brand strong{color:rgba(255,255,255,.86);font-weight:360;font-size:clamp(22px,3vw,42px);letter-spacing:.01em;text-shadow:0 0 22px rgba(var(--accent-rgb),.12);transition:text-shadow .45s ease}
+.brand span,.topbar small{color:rgba(var(--accent-rgb),.46);font-size:10px;letter-spacing:.24em;text-transform:uppercase;white-space:nowrap;transition:color .45s ease}
+.layout{min-height:calc(100dvh - 96px);display:grid;grid-template-columns:minmax(245px,300px) minmax(390px,1fr) minmax(255px,330px);gap:clamp(18px,2.5vw,38px);align-items:center}
+.panel{border:1px solid rgba(var(--accent-rgb),.18);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.022));backdrop-filter:blur(22px);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 32px rgba(var(--accent-rgb),.055);transition:border-color .55s ease,box-shadow .55s ease,background .55s ease}
+.input-panel{position:relative;overflow:hidden;border-color:rgba(var(--accent-rgb),.24);box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 42px rgba(var(--accent-rgb),var(--tone-glow));transition:border-color .55s ease,box-shadow .55s ease,background .55s ease}
+.input-panel::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 10% 4%,rgba(var(--accent-rgb),.28),transparent 32%),linear-gradient(135deg,rgba(var(--accent-rgb),.13),transparent 44%);opacity:.54;transition:opacity .55s ease,background .55s ease}
+.input-panel .panel-head,.input-panel .panel-body{position:relative;z-index:1}
+.input-panel .panel-head span:first-child,.input-panel .label{color:rgba(var(--accent-rgb),.86);text-shadow:0 0 16px rgba(var(--accent-rgb),.22);transition:color .45s ease,text-shadow .45s ease}
+.input-panel .panel-head span:last-child{color:rgba(var(--accent-rgb),.70)}
+.input-panel .note{color:rgba(255,255,255,.46);transition:color .45s ease}
+.input-panel textarea,.input-panel input[type=password]{border-color:rgba(var(--accent-rgb),.22);background:linear-gradient(180deg,rgba(var(--accent-rgb),.045),rgba(0,0,0,.28));box-shadow:inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .45s ease,background .45s ease,color .45s ease,box-shadow .45s ease}
+.input-panel textarea:focus,.input-panel input[type=password]:focus{border-color:rgba(var(--accent-rgb),.66);box-shadow:0 0 0 4px rgba(var(--accent-rgb),.10),0 0 24px rgba(var(--accent-rgb),.12)}
+.input-panel .btn:not(.ghost){box-shadow:0 0 28px rgba(var(--accent-rgb),.16)}
+.output-panel{position:relative;overflow:hidden;border-color:rgba(var(--accent-rgb),.24);box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 40px rgba(var(--accent-rgb),.10)}
+.output-panel::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(var(--accent-rgb),.08),transparent 48%);opacity:.72}
+.output-panel .panel-head,.output-panel .panel-body{position:relative;z-index:1}
+.output-panel .panel-head span:first-child,.metric b,.logic-step b{color:rgba(var(--accent-rgb),.82);text-shadow:0 0 14px rgba(var(--accent-rgb),.18);transition:color .45s ease,text-shadow .45s ease}
+.json{color:rgba(var(--accent-rgb),.86)}
+html[data-tone="warm"]{--tone-glow:.24}
+html[data-tone="warm"] .app{background:radial-gradient(circle at 51% 52%,rgba(var(--accent-rgb),.20),transparent 24%),radial-gradient(circle at 16% 38%,rgba(255,130,52,.085),transparent 28%),#050505}
+html[data-tone="warm"] .input-panel,html[data-tone="warm"] .output-panel{border-color:rgba(var(--accent-rgb),.50);background:linear-gradient(180deg,rgba(var(--accent-rgb),.105),rgba(255,96,24,.034));box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 58px rgba(var(--accent-rgb),.24),inset 0 1px 0 rgba(255,204,156,.13)}
+html[data-tone="warm"] .input-panel::before{opacity:1;background:radial-gradient(circle at 8% 0%,rgba(var(--accent-rgb),.44),transparent 34%),linear-gradient(135deg,rgba(255,143,65,.21),transparent 46%)}
+html[data-tone="warm"] .input-panel .note{color:rgba(255,229,180,.72)}
+html[data-tone="warm"] .input-panel textarea,html[data-tone="warm"] .input-panel input[type=password]{color:rgba(255,240,209,.93);border-color:rgba(var(--accent-rgb),.52);background:linear-gradient(180deg,rgba(var(--accent-rgb),.12),rgba(0,0,0,.32));box-shadow:inset 0 1px 0 rgba(255,226,167,.10),0 0 22px rgba(var(--accent-rgb),.10)}
+html[data-tone="warm"] .input-panel .btn:not(.ghost){background:rgba(var(--accent-rgb),.24);border-color:rgba(var(--accent-rgb),.66);color:rgba(255,246,225,.96);box-shadow:0 0 32px rgba(var(--accent-rgb),.24)}
+html[data-tone="warm"] .input-panel .cm{color:rgba(255,238,202,.96);background:rgba(var(--accent-rgb),.14);box-shadow:0 0 26px rgba(var(--accent-rgb),.22)}
+html[data-tone="cool"] .input-panel,html[data-tone="cool"] .output-panel{border-color:rgba(var(--accent-rgb),.44);box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 48px rgba(var(--accent-rgb),.18)}
+html[data-tone="cool"] .input-panel .cm{box-shadow:0 0 22px rgba(var(--accent-rgb),.16)}
+html[data-tone="cold"]{--tone-glow:.22}
+html[data-tone="cold"] .app{background:radial-gradient(circle at 51% 52%,rgba(var(--accent-rgb),.18),transparent 24%),radial-gradient(circle at 16% 38%,rgba(14,96,182,.09),transparent 30%),#050505}
+html[data-tone="cold"] .input-panel,html[data-tone="cold"] .output-panel{border-color:rgba(var(--accent-rgb),.48);background:linear-gradient(180deg,rgba(var(--accent-rgb),.10),rgba(3,28,65,.05));box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 58px rgba(var(--accent-rgb),.22),inset 0 1px 0 rgba(125,186,255,.10)}
+html[data-tone="cold"] .input-panel::before{opacity:.9;background:radial-gradient(circle at 8% 0%,rgba(var(--accent-rgb),.40),transparent 34%),linear-gradient(135deg,rgba(29,113,210,.18),transparent 46%)}
+html[data-tone="cold"] .input-panel .note{color:rgba(190,219,255,.66)}
+html[data-tone="cold"] .input-panel textarea,html[data-tone="cold"] .input-panel input[type=password]{color:rgba(219,236,255,.92);border-color:rgba(var(--accent-rgb),.50);background:linear-gradient(180deg,rgba(var(--accent-rgb),.11),rgba(0,0,0,.35));box-shadow:inset 0 1px 0 rgba(180,217,255,.08),0 0 22px rgba(var(--accent-rgb),.10)}
+html[data-tone="static"] .input-panel,html[data-tone="static"] .output-panel{border-color:rgba(255,255,255,.18);box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 26px rgba(255,255,255,.08)}
+html[data-tone="static"] .input-panel::before{opacity:.30}
+html[data-tone="static"] .glow-field,html[data-tone="static"] .side-glow,html[data-tone="static"] .scan-line{opacity:.18}
+html[data-tone="warm"] .stage-title h1,html[data-tone="warm"] .brand strong{color:rgba(255,242,222,.94)}
+html[data-tone="cool"] .stage-title h1,html[data-tone="cold"] .stage-title h1,html[data-tone="cool"] .brand strong,html[data-tone="cold"] .brand strong{color:rgba(228,242,255,.94)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid rgba(255,255,255,.075);color:rgba(255,255,255,.44);font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+.panel-body{padding:17px 15px}
+.label{display:block;color:var(--muted);font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 8px}
+.note{margin:0 0 18px;color:rgba(255,255,255,.38);font-size:12px;line-height:1.75}
+.field{margin-bottom:16px}
+.distance-row{display:grid;grid-template-columns:1fr 66px;align-items:center;gap:12px}
+input[type=range]{width:100%;height:24px;accent-color:var(--accent)}
+.cm{height:34px;display:grid;place-items:center;border-radius:999px;border:1px solid rgba(var(--accent-rgb),.30);color:rgba(255,255,255,.72);background:rgba(var(--accent-rgb),.065);font-size:12px;font-variant-numeric:tabular-nums;box-shadow:0 0 20px rgba(var(--accent-rgb),.10)}
+textarea{width:100%;min-height:112px;resize:vertical;border-radius:12px;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82);background:rgba(0,0,0,.30);padding:12px;line-height:1.6;outline:none}
+input[type=password]{width:100%;height:38px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82);background:rgba(0,0,0,.30);padding:0 13px;outline:none}
+textarea:focus,input[type=password]:focus{border-color:rgba(var(--accent-rgb),.52);box-shadow:0 0 0 4px rgba(var(--accent-rgb),.10)}
+.api-hint{display:block;margin-top:7px;color:rgba(255,255,255,.36);font-size:11px;line-height:1.35;transition:color .45s ease}
+.api-hint.active{color:rgba(var(--accent-rgb),.78);text-shadow:0 0 12px rgba(var(--accent-rgb),.18)}
+.actions{display:flex;flex-wrap:wrap;gap:9px}
+.btn{min-height:36px;border-radius:999px;padding:0 15px;border:1px solid rgba(var(--accent-rgb),.36);color:rgba(255,255,255,.86);background:rgba(var(--accent-rgb),.16);cursor:pointer;font-size:12px;transition:transform .18s,border-color .18s,background .18s,box-shadow .18s}
+.btn:hover{border-color:rgba(var(--accent-rgb),.72);box-shadow:0 0 24px rgba(var(--accent-rgb),.16)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.13);color:rgba(255,255,255,.52)}
+.btn.active{border-color:rgba(var(--accent-rgb),.78);color:#fff;background:rgba(var(--accent-rgb),.20)}
+.btn.live{border-color:rgba(var(--accent-rgb),.58);background:rgba(var(--accent-rgb),.18);box-shadow:0 0 30px rgba(var(--accent-rgb),.20)}
+.btn.live:hover{border-color:rgba(var(--accent-rgb),.82);background:rgba(var(--accent-rgb),.24);box-shadow:0 0 34px rgba(var(--accent-rgb),.24)}
+.is-analysing .btn.live{box-shadow:0 0 34px rgba(var(--accent-rgb),.30);transform:translateY(1px)}
+.tone-card{margin-top:16px;border:1px solid rgba(var(--accent-rgb),.20);border-radius:14px;background:rgba(0,0,0,.24);padding:12px 13px;box-shadow:0 0 24px rgba(var(--accent-rgb),.07);transition:border-color .45s ease,background .45s ease,box-shadow .45s ease}
+.tone-card span{display:block;color:rgba(255,255,255,.28);font-size:10px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+.tone-card b{display:block;color:rgba(var(--accent-rgb),.88);font-size:26px;font-weight:420;line-height:1;text-shadow:0 0 18px rgba(var(--accent-rgb),.20);transition:color .45s ease,text-shadow .45s ease}
+.tone-card small{display:block;margin-top:9px;color:rgba(255,255,255,.40);font-size:11px;line-height:1.45;transition:color .45s ease}
+html[data-tone="warm"] .tone-card{border-color:rgba(var(--accent-rgb),.50);background:rgba(var(--accent-rgb),.09);box-shadow:0 0 34px rgba(var(--accent-rgb),.18)}
+html[data-tone="cool"] .tone-card,html[data-tone="cold"] .tone-card{border-color:rgba(var(--accent-rgb),.44);background:rgba(var(--accent-rgb),.075);box-shadow:0 0 30px rgba(var(--accent-rgb),.16)}
+.stage{min-height:610px;position:relative;display:grid;place-items:center}
+.stage-title{position:absolute;left:0;top:0;z-index:4;max-width:390px;pointer-events:none}
+.stage-title h1{margin:0;color:rgba(255,255,255,.86);font-size:clamp(34px,5vw,76px);line-height:.96;font-weight:330;letter-spacing:0;text-shadow:0 0 30px rgba(var(--accent-rgb),.13);transition:text-shadow .45s ease}
+.stage-title p{margin:14px 0 0;max-width:30ch;color:rgba(var(--accent-rgb),.58);font-size:13px;line-height:1.68;transition:color .45s ease}
+.model-shell{position:relative;width:min(66vw,710px);height:min(70vw,650px);min-width:390px;min-height:560px;display:grid;place-items:center;perspective:1200px;cursor:grab;touch-action:none}
+.model-shell:active{cursor:grabbing}
+.model-shell::before{content:"";position:absolute;left:50%;top:54%;width:68%;height:18%;border-radius:50%;background:rgba(0,0,0,.72);filter:blur(22px);transform:translate(-50%,-50%) rotateX(62deg);opacity:.72}
+.glow-field{position:absolute;left:50%;top:52%;width:74%;height:40%;border-radius:50%;transform:translate(-50%,-50%) scale(calc(.72 + var(--inflate)*.58));background:radial-gradient(ellipse at 52% 46%,rgba(var(--accent-rgb),.52),transparent 22%),radial-gradient(ellipse at 50% 48%,rgba(var(--accent-rgb),.25),transparent 60%);filter:blur(27px);opacity:calc(.36 + var(--inflate)*.58);animation:breathe var(--pulse) ease-in-out infinite}
+.side-glow{position:absolute;left:50%;top:52%;width:94%;height:50%;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(ellipse at 18% 50%,rgba(var(--accent-rgb),.28),transparent 30%),radial-gradient(ellipse at 82% 49%,rgba(var(--accent-rgb),.30),transparent 30%);filter:blur(30px);opacity:calc(.26 + var(--inflate)*.46);pointer-events:none}
+.model-frame{position:absolute;inset:0;z-index:3;transform:rotateX(var(--tilt-x)) rotateY(var(--tilt-y));transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+#modelCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 0 36px rgba(var(--accent-rgb),.70)) drop-shadow(0 0 96px rgba(var(--accent-rgb),.34))}
+.model-status{position:absolute;left:50%;bottom:84px;z-index:5;transform:translateX(-50%);width:min(390px,86%);border:1px solid rgba(var(--accent-rgb),.32);border-radius:999px;background:rgba(0,0,0,.52);backdrop-filter:blur(15px);padding:9px 13px;text-align:center;color:rgba(255,255,255,.70);font-size:11px;letter-spacing:.05em}
+.model-status.ready{opacity:.42}
+.scan-line{position:absolute;left:16%;right:16%;top:53%;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.72),transparent);box-shadow:0 0 18px rgba(var(--accent-rgb),.42);opacity:.5;z-index:5}
+.readouts{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(530px,92vw);display:grid;grid-template-columns:repeat(3,1fr);gap:10px;z-index:6}
+.metric{min-height:66px;border:1px solid rgba(var(--accent-rgb),.18);border-radius:14px;background:rgba(0,0,0,.34);backdrop-filter:blur(14px);padding:12px 14px;box-shadow:0 0 24px rgba(var(--accent-rgb),.07);transition:border-color .45s ease,box-shadow .45s ease}
+.metric span{display:block;color:rgba(255,255,255,.25);font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:7px}
+.metric b{color:rgba(var(--accent-rgb),.86);font-size:20px;font-weight:420;font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(var(--accent-rgb),.18);transition:color .45s ease,text-shadow .45s ease}
+.json{border-radius:12px;padding:14px;background:rgba(0,0,0,.46);border:1px solid rgba(var(--accent-rgb),.16);font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;line-height:1.65;white-space:pre-wrap;overflow:auto;box-shadow:inset 0 1px 0 rgba(var(--accent-rgb),.06);transition:border-color .45s ease,color .45s ease}
+.bars{display:grid;gap:10px;margin-top:15px}
+.bar-row{display:grid;grid-template-columns:74px 1fr 88px;gap:10px;align-items:center;color:rgba(255,255,255,.36);font-size:11px}
+.bar{height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;width:var(--w);height:100%;background:rgb(var(--accent-rgb));box-shadow:0 0 15px rgba(var(--accent-rgb),.55);transition:width .65s ease,background .65s ease}
+.logic{display:grid;gap:9px;margin-top:16px}
+.logic-step{display:grid;grid-template-columns:25px 1fr;gap:10px;align-items:center}
+.logic-step i{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-style:normal;color:rgba(255,255,255,.64);border:1px solid rgba(var(--accent-rgb),.25);background:rgba(var(--accent-rgb),.06);font-size:11px}
+.logic-step b{display:block;color:rgba(var(--accent-rgb),.78);font-size:12px;margin-bottom:2px;text-shadow:0 0 12px rgba(var(--accent-rgb),.14);transition:color .45s ease,text-shadow .45s ease}
+.logic-step span{display:block;color:rgba(255,255,255,.30);font-size:11px}
+.reflection{margin-top:16px;border-radius:12px;padding:13px;color:rgba(255,255,255,.56);background:rgba(var(--accent-rgb),.075);border:1px solid rgba(var(--accent-rgb),.22);line-height:1.65;font-size:12px}
+.status{position:fixed;top:82px;left:50%;transform:translateX(-50%);z-index:40;width:min(560px,calc(100vw - 36px));border:1px solid rgba(var(--accent-rgb),.30);background:rgba(0,0,0,.68);backdrop-filter:blur(18px);border-radius:999px;padding:10px 16px;color:rgba(255,255,255,.72);text-align:center;font-size:12px;box-shadow:0 0 36px rgba(var(--accent-rgb),.14);animation:statusIn .36s ease both}
+html[data-tone="static"] .glow-field,html[data-tone="static"] .side-glow,html[data-tone="static"] .scan-line{opacity:.16}
+html[data-tone="warm"] .stage-title h1,html[data-tone="warm"] .brand strong{color:rgba(255,242,222,.94)}
+html[data-tone="cool"] .stage-title h1,html[data-tone="cold"] .stage-title h1,html[data-tone="cool"] .brand strong,html[data-tone="cold"] .brand strong{color:rgba(228,242,255,.94)}
+html[data-tone="warm"] .reflection{color:rgba(255,229,180,.76)}
+html[data-tone="cool"] .reflection,html[data-tone="cold"] .reflection{color:rgba(202,229,255,.72)}
+@media (prefers-reduced-motion:reduce){
+  .app::before,.glow-field{animation:none}
+  .model-frame{transition:none}
+}
+@media (max-width:1080px){
+  .layout{grid-template-columns:1fr;align-items:stretch}
+  .stage{order:-1;min-height:auto;align-content:start;gap:10px}
+  .stage-title{position:relative;margin-bottom:0;max-width:min(760px,100%)}
+  .stage-title h1{font-size:clamp(34px,5.2vw,50px)}
+  .model-shell{width:100%;height:clamp(330px,48vh,470px);min-width:0;min-height:330px;margin-top:-18px}
+  .readouts{position:relative;bottom:auto;left:auto;transform:none;margin-top:6px}
+}
+@media (max-width:640px){
+  .app{padding:26px 14px 24px}
+  .topbar{height:auto;align-items:flex-start}
+  .brand{display:block}
+  .brand strong{display:block;margin-bottom:4px}
+  .brand span{display:block;margin-top:6px}
+  .topbar small{display:none}
+  .stage{padding-top:10px}
+  .stage-title h1{font-size:34px;max-width:12ch}
+  .stage-title p{max-width:29ch}
+  .model-shell{height:350px;min-height:350px;margin-top:-4px}
+  .readouts{grid-template-columns:1fr;margin-top:8px}
+}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><strong>EchoPulse</strong></div>
+    <small>distance + speech + api -> light + inflatable</small>
+  </header>
+  <div class="status" id="status" hidden></div>
+  <section class="layout">
+    <aside class="panel input-panel">
+      <div class="panel-head"><span>me - input</span><span id="modeLabel">local</span></div>
+      <div class="panel-body">
+        <p class="note">Physical closeness is not always emotional closeness. Enter distance and speech to translate the fused signal into color, glow, and inflatable form.</p>
+        <form id="analysisForm">
+          <div class="field">
+            <label class="label" for="distance">distance sensor / 0-255 cm</label>
+            <div class="distance-row">
+              <input id="distance" type="range" min="0" max="255" value="120" />
+              <div class="cm" id="distanceValue">120 cm</div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="speech">speech transcript</label>
+            <textarea id="speech"></textarea>
+          </div>
+          <div class="field">
+            <label class="label">api connection</label>
+            <small class="api-hint active" id="apiStatus">server api ready when deployed</small>
+          </div>
+          <div class="actions">
+            <button class="btn live" type="submit" id="liveBtn">Read Tone</button>
+            <button class="btn ghost" type="button" id="micBtn">Mic</button>
+          </div>
+        </form>
+        <div class="tone-card" id="toneCard" aria-live="polite">
+          <span>read tone</span>
+          <b id="toneValue">neutral</b>
+          <small id="toneDetail">Local reading waits for speech.</small>
+        </div>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-title"><h1>Emotional distance becomes body.</h1><p>The ring listens locally. Near conflict warms. Far kindness cools.</p></div>
+      <div class="model-shell" id="modelShell" aria-label="interactive 3D product view">
+        <div class="side-glow"></div>
+        <div class="glow-field"></div>
+        <div class="model-frame" id="modelFrame">
+          <canvas id="modelCanvas"></canvas>
+        </div>
+        <div class="scan-line"></div>
+        <div class="model-status" id="modelStatus">loading 3D collar model</div>
+      </div>
+      <div class="readouts">
+        <div class="metric"><span>proximity</span><b id="metricDistance">middle</b></div>
+        <div class="metric"><span>tone</span><b id="metricEmotion">neutral</b></div>
+        <div class="metric"><span>inflation</span><b id="metricInflation">0%</b></div>
+      </div>
+    </section>
+
+    <aside class="panel output-panel">
+      <div class="panel-head"><span>fusion output</span><span id="lightMode">still</span></div>
+      <div class="panel-body">
+        <div class="json" id="jsonBox"></div>
+        <div class="bars">
+          <div class="bar-row"><span>color</span><div class="bar"><i id="barColor" style="--w:8%"></i></div><span id="colorText">white static</span></div>
+          <div class="bar-row"><span>inflation</span><div class="bar"><i id="barInflation" style="--w:0%"></i></div><span id="inflationText">0%</span></div>
+          <div class="bar-row"><span>distance</span><div class="bar"><i id="barDistance" style="--w:47%"></i></div><span id="distanceText">middle</span></div>
+        </div>
+        <div class="logic">
+          <div class="logic-step"><i>1</i><div><b>Distance sensor</b><span>0-255 cm</span></div></div>
+          <div class="logic-step"><i>2</i><div><b>Speech input</b><span>language tone</span></div></div>
+          <div class="logic-step"><i>3</i><div><b>Joint analysis</b><span>distance + language</span></div></div>
+          <div class="logic-step"><i>4</i><div><b>Light behavior</b><span>color + glow</span></div></div>
+          <div class="logic-step"><i>5</i><div><b>Inflatable form</b><span>open / contract</span></div></div>
+        </div>
+        <div class="reflection" id="reflection"></div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<script>
+const $ = selector => document.querySelector(selector);
+const root = document.documentElement;
+const API_MODEL = 'gpt-5-mini';
+const state = {distance:120,speech:'',listening:false,result:null,apiTimer:null,apiRequest:0};
+const emotions = {
+  angry:{base:.06},
+  tense:{base:.22},
+  neutral:{base:.34},
+  friendly:{base:.78},
+  kind:{base:.9},
+  silence:{base:0}
+};
+const palette = {
+  warmBoundary:'#e0521e',
+  warmMiddle:'#ef7b2f',
+  warmPulse:'#f6c766',
+  golden:'#f0a700',
+  coolLight:'#78bff2',
+  coolDistance:'#4294db',
+  deepCool:'#0d63b7',
+  white:'#f7f5ef'
+};
+const words = {
+  kind:['love','care','miss','gentle','tender','support','with you','protect','safe','hug','trust','想你','爱','喜欢','温柔','陪你','关心','没关系','支持你','保护你','在乎你','抱抱','相信你'],
+  friendly:['hello','hi','thanks','thank you','nice','good','great','happy','appreciate','welcome','kind','sweet','你好','谢谢','感谢','开心','很好','欢迎','友好','没事','可以','好的','辛苦了','真好'],
+  tense:['worried','anxious','uncomfortable','not sure','nervous','afraid','maybe','stress','stressed','awkward','嗯','还好','不确定','紧张','害怕','不舒服','算了','压力','焦虑','担心','别这样','尴尬'],
+  angry:['hate','angry','furious','terrible','get out','go away','leave me','too close','shut up','annoying','rude','stupid','idiot','fuck','bad','awful','走开','离我远','离远点','别靠近','别碰我','讨厌','闭嘴','滚','烦死','烦','生气','不友好','不太友好','恶心','傻','笨','吵','别说了','难听']
+};
+function hexToRgb(hex){const raw=String(hex||'').replace('#','').trim();const clean=/^[0-9a-f]{3}$|^[0-9a-f]{6}$/i.test(raw)?raw:'b8c7cf';const n=parseInt(clean.length===3?clean.split('').map(x=>x+x).join(''):clean,16);return [(n>>16)&255,(n>>8)&255,n&255]}
+function rgbString(hex){return hexToRgb(hex).join(',')}
+function clamp(value,min,max){return Math.max(min,Math.min(max,value))}
+function mixHex(from,to,amount){
+  const a=hexToRgb(from);
+  const b=hexToRgb(to);
+  const t=clamp(amount,0,1);
+  return '#'+a.map((channel,index)=>Math.round(channel+(b[index]-channel)*t).toString(16).padStart(2,'0')).join('');
+}
+function valueFromNodes(distance,nodes){
+  const d=clamp(distance,0,255);
+  for(let i=0;i<nodes.length-1;i++){
+    const [x1,y1]=nodes[i];
+    const [x2,y2]=nodes[i+1];
+    if(d>=x1&&d<=x2) return y1+(y2-y1)*((d-x1)/(x2-x1));
+  }
+  return nodes[nodes.length-1][1];
+}
+function colorFromNodes(distance,nodes){
+  const d=clamp(distance,0,255);
+  for(let i=0;i<nodes.length-1;i++){
+    const [x1,c1]=nodes[i];
+    const [x2,c2]=nodes[i+1];
+    if(d>=x1&&d<=x2) return mixHex(c1,c2,(d-x1)/(x2-x1));
+  }
+  return nodes[nodes.length-1][1];
+}
+function match(text,set){const lower=text.toLowerCase();return set.reduce((sum,w)=>sum+(lower.includes(w.toLowerCase())?1:0),0)}
+function proximityLabel(distance){return distance<52?'very close':distance<102?'close':distance<158?'middle':distance<216?'far':'very far'}
+function classifyEmotion(text){
+  const clean=text.toLowerCase();
+  if(/^(\s|[.,!?，。！？])*$/u.test(clean)) return 'neutral';
+  const negatedHostile=/(not bad|not terrible|not annoying|not angry|没有不友好|不是不友好|不讨厌|不烦|没有生气|别紧张|不用害怕|不要担心)/i.test(clean);
+  const quotedBoundary=/(someone said|他.*说|她.*说|他们.*说|引用|quote).*(走开|滚|闭嘴|hate|shut up|get out|go away|annoying|rude)/i.test(clean);
+  const score={
+    kind:match(clean,words.kind),
+    friendly:match(clean,words.friendly),
+    tense:match(clean,words.tense),
+    angry:match(clean,words.angry)
+  };
+  const hostilePatterns=[
+    /(go away|get out|leave me|shut up|too close|do not touch|don't touch|dont touch|back off|hate|annoying|rude|terrible|angry|furious|stupid|idiot|awful|bad|fuck|stop talking)/i,
+    /(走开|滚|闭嘴|烦死|烦人|烦|讨厌|恶心|生气|离我远|离远点|别靠近|不要靠近|别碰我|不要碰我|不友好|不太友好|太近了|离开|傻|笨|吵|别说了|难听)/
+  ];
+  const friendlyPatterns=[
+    /(thank|thanks|appreciate|care about|care for|support|love|like|miss you|nice|good|welcome|gentle|safe|with you|happy|kind|sweet|trust|sorry)/i,
+    /(谢谢|感谢|喜欢|爱|想你|关心|在乎|支持|陪你|没关系|没事|很好|开心|欢迎|友好|温柔|辛苦了|可以的|抱歉|对不起|相信你|真好)/
+  ];
+  hostilePatterns.forEach(pattern=>{if(pattern.test(clean)) score.angry+=2});
+  friendlyPatterns.forEach(pattern=>{if(pattern.test(clean)) score.friendly+=2});
+  if(negatedHostile){score.angry=Math.max(0,score.angry-3);score.tense=Math.max(0,score.tense-1);score.friendly+=1}
+  if(quotedBoundary){score.angry=Math.max(0,score.angry-2);score.tense+=1}
+  const exclaim=(text.match(/[!！]/g)||[]).length;
+  if(exclaim>1) score.angry+=1;
+  if(/\b(yeah right|sure|whatever|as if|fine)\b/i.test(text)) score.tense+=1;
+  const hostile=score.angry+score.tense*.72;
+  const friendly=score.kind+score.friendly*.86;
+  if(hostile>friendly&&hostile>0) return score.angry>=score.tense?'angry':'tense';
+  if(friendly>hostile&&friendly>0) return score.kind>score.friendly?'kind':'friendly';
+  if(hostile>0) return 'tense';
+  if(friendly>0) return 'friendly';
+  return 'neutral';
+}
+function toneLabelForEmotion(emotion){
+  if(emotion==='angry'||emotion==='tense') return 'unfriendly';
+  if(emotion==='friendly'||emotion==='kind') return 'friendly';
+  return 'neutral';
+}
+function distanceProfile(distance){
+  const closeness=1-clamp(distance,0,255)/255;
+  const distance_push=clamp((distance-116)/139,0,1);
+  const proximity_pressure=clamp((96-distance)/96,0,1);
+  return {closeness,distance_push,proximity_pressure,label:proximityLabel(distance)};
+}
+function fusionWeights(emotion,confidence){
+  const tone=toneLabelForEmotion(emotion);
+  if(tone==='neutral') return {language_weight:.34,distance_weight:.66};
+  const language=clamp((Number(confidence)||.7)*.74,.54,.82);
+  return {language_weight:language,distance_weight:1-language};
+}
+function toneDetailForResult(result){
+  const source=result.source==='api'?'API reading':'Local reading';
+  if(result.tone_label==='unfriendly') return source+'. Warm boundary holds while distance changes contraction.';
+  if(result.tone_label==='friendly') return source+'. Cool openness holds while distance changes expansion.';
+  if(result.proximity==='very close'||result.proximity==='close') return source+'. Neutral language, close distance warms the body.';
+  if(result.proximity==='far'||result.proximity==='very far') return source+'. Neutral language, far distance cools the body.';
+  return source+'. Static neutral distance rests in white.';
+}
+function toneForTemperature(temperature){
+  if(temperature==='warm') return 'warm';
+  if(temperature==='cold') return 'cold';
+  if(temperature==='cool') return 'cool';
+  return 'static';
+}
+function profileForSignal(emotion,distance){
+  const hostile=emotion==='angry'||emotion==='tense';
+  const caring=emotion==='friendly'||emotion==='kind';
+  if(hostile){
+    const color=colorFromNodes(distance,[[0,palette.warmBoundary],[70,palette.warmBoundary],[128,palette.warmMiddle],[196,palette.warmPulse],[255,palette.golden]]);
+    return {signal:'unfriendly language',light_color:color,color_family:distance<96?'deep warm boundary':distance<188?'warm boundary':'distant warm boundary',temperature:'warm',vibration:distance<96?'tight contract':distance<188?'contracted':'held boundary',light_mode:'contract'};
+  }
+  if(caring){
+    const color=colorFromNodes(distance,[[0,palette.coolLight],[84,palette.coolLight],[146,palette.coolDistance],[210,palette.deepCool],[255,palette.deepCool]]);
+    return {signal:'friendly language',light_color:color,color_family:distance<96?'light cool contact':distance<188?'cool openness':'deep cool openness',temperature:distance<188?'cool':'cold',vibration:distance<96?'soft opening':distance<188?'expanded pulse':'wide wave',light_mode:emotion==='kind'||distance>196?'wave':'pulse'};
+  }
+  const neutralColor=colorFromNodes(distance,[[0,palette.warmPulse],[72,palette.warmPulse],[118,palette.white],[150,palette.white],[205,palette.coolDistance],[255,palette.deepCool]]);
+  if(distance<92) return {signal:'close distance',light_color:neutralColor,color_family:'light warm proximity',temperature:'warm',vibration:'soft contract',light_mode:'contract'};
+  if(distance>178) return {signal:'far distance',light_color:neutralColor,color_family:distance>220?'deep cool distance':'cool distance',temperature:distance>220?'cold':'cool',vibration:'expanded',light_mode:'pulse'};
+  return {signal:'static',light_color:palette.white,color_family:'white static',temperature:'neutral',vibration:'still',light_mode:'off'};
+}
+function inflationForSignal(emotion,distance){
+  const hostile=emotion==='angry'||emotion==='tense';
+  const caring=emotion==='friendly'||emotion==='kind';
+  if(hostile) return valueFromNodes(distance,[[0,6],[42,8],[86,12],[128,18],[176,24],[222,30],[255,34]]);
+  if(caring) return valueFromNodes(distance,[[0,34],[42,42],[86,52],[128,64],[176,76],[222,88],[255,94]]);
+  return valueFromNodes(distance,[[0,18],[42,14],[86,8],[112,2],[128,0],[148,3],[178,24],[214,54],[255,78]]);
+}
+function makeResult(emotion,distance,inflation,reason,extras={}){
+  const profile=profileForSignal(emotion,distance);
+  const value=Math.max(0,Math.min(100,Math.round(inflation)));
+  const tone_label=toneLabelForEmotion(emotion);
+  const weights=fusionWeights(emotion,extras.confidence);
+  return {...profile,emotion,tone_label,light_mode:value<=0?'off':profile.light_mode,inflation_value:value,distance_cm:distance,proximity:proximityLabel(distance),reasoning:reason,source:extras.source||'local',intent:extras.intent||profile.signal,confidence:extras.confidence??null,language_weight:extras.language_weight??weights.language_weight,distance_weight:extras.distance_weight??weights.distance_weight};
+}
+function analyzeLocal(text,distance){
+  const clean=text.trim();
+  const emotion=clean?classifyEmotion(clean):'neutral';
+  const inflation=inflationForSignal(emotion,distance);
+  const hostile=emotion==='angry'||emotion==='tense';
+  const caring=emotion==='friendly'||emotion==='kind';
+  const reason=hostile
+    ? 'Unfriendly language takes priority. Distance changes the contraction strength, but the color stays warm.'
+    : caring
+      ? 'Friendly language takes priority. Distance changes the opening strength, and the color stays cool.'
+      : distance<92
+        ? 'No strong tone is detected. Close distance creates a light warm contraction.'
+        : distance>178
+          ? 'No strong tone is detected. Far distance creates a cool expanded state.'
+          : 'Static mode: neutral signal at middle distance rests in white stillness.';
+  let confidence=.34;
+  if(clean) confidence=(hostile||caring) ? .68 : .48;
+  const intent=hostile?'boundary':caring?'support':'neutral';
+  return makeResult(emotion,distance,inflation,reason,{source:'local',confidence,intent});
+}
+function showStatus(text){const el=$('#status');el.textContent=text;el.hidden=false;clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>{el.hidden=true},4200)}
+function setApiStatus(text,active=false){
+  const el=$('#apiStatus');
+  if(!el) return;
+  el.textContent=text;
+  el.classList.toggle('active',active);
+  $('#modeLabel').textContent=canUseServerApi()?'api':'local';
+}
+function readApiKey(){return ($('#apiKey')?.value||'').trim()}
+function canUseServerApi(){return location.protocol.startsWith('http')}
+function applyResult(result){
+  state.result=result;
+  const safeColor=result.light_color;
+  const tone=toneForTemperature(result.temperature);
+  root.dataset.emotion=result.emotion;
+  root.dataset.tone=tone;
+  root.style.setProperty('--accent',safeColor);
+  root.style.setProperty('--accent-rgb',rgbString(safeColor));
+  root.style.setProperty('--inflate',String(result.inflation_value/100));
+  root.style.setProperty('--pulse',result.light_mode==='wave'?'4.8s':result.light_mode==='pulse'?'3.1s':result.light_mode==='contract'?'1.9s':'8s');
+  $('#metricDistance').textContent=result.proximity;
+  $('#metricEmotion').textContent=result.tone_label;
+  $('#metricInflation').textContent=result.inflation_value+'%';
+  $('#lightMode').textContent=result.vibration;
+  $('#toneValue').textContent=result.tone_label;
+  $('#toneDetail').textContent=toneDetailForResult(result);
+  $('#jsonBox').textContent=JSON.stringify({source:result.source,signal:result.signal,tone:result.tone_label,emotion:result.emotion,intent:result.intent,confidence:result.confidence,color:result.color_family,temperature:result.temperature,vibration:result.vibration,light_color:safeColor,inflation_value:result.inflation_value,distance_cm:result.distance_cm,language_weight:Number(result.language_weight.toFixed(2)),distance_weight:Number(result.distance_weight.toFixed(2))},null,2);
+  $('#colorText').textContent=result.color_family;
+  $('#inflationText').textContent=result.inflation_value+'%';
+  $('#distanceText').textContent=result.proximity;
+  $('#barColor').style.setProperty('--w',result.light_mode==='off'?'8%':'100%');
+  $('#barInflation').style.setProperty('--w',result.inflation_value+'%');
+  $('#barDistance').style.setProperty('--w',Math.round(result.distance_cm/255*100)+'%');
+  $('#reflection').textContent=result.reasoning;
+  window.dispatchEvent(new CustomEvent('echopulse:state',{detail:result}));
+}
+function extractResponseText(data){
+  if(data&&typeof data.output_text==='string') return data.output_text;
+  const parts=[];
+  (data?.output||[]).forEach(item=>{
+    (item?.content||[]).forEach(content=>{
+      if(typeof content?.text==='string') parts.push(content.text);
+    });
+  });
+  return parts.join('\n');
+}
+function normalizeApiEmotion(payload,localEmotion){
+  const tone=String(payload?.tone||'').toLowerCase();
+  const raw=String(payload?.emotion||'').toLowerCase();
+  const allowed=['angry','tense','neutral','friendly','kind'];
+  let emotion=allowed.includes(raw)?raw:localEmotion;
+  if(tone==='unfriendly'&&emotion!=='angry'&&emotion!=='tense') emotion='tense';
+  if(tone==='friendly'&&emotion!=='friendly'&&emotion!=='kind') emotion='friendly';
+  if(tone==='neutral') emotion='neutral';
+  return emotion;
+}
+function buildFusedResult(payload,text,distance){
+  const local=analyzeLocal(text,distance);
+  const emotion=normalizeApiEmotion(payload,local.emotion);
+  const confidence=clamp(Number(payload?.confidence)||local.confidence||.62,0,1);
+  const inflation=inflationForSignal(emotion,distance);
+  const intent=String(payload?.intent||local.intent||'neutral').slice(0,42);
+  const distanceInfo=distanceProfile(distance);
+  const apiReason=String(payload?.reasoning||'').slice(0,170);
+  const reason=apiReason
+    ? `${apiReason} Distance is ${distanceInfo.label}, so it adjusts intensity and form after the language tone is set.`
+    : local.reasoning;
+  return makeResult(emotion,distance,inflation,reason,{source:'api',confidence,intent});
+}
+async function analyzeWithApi(text,distance){
+  const payload={
+    model:API_MODEL,
+    store:false,
+    input:[
+      {
+        role:'system',
+        content:'You read only the language tone and intent of an interpersonal speech transcript for a wearable collar. Do not classify tone from distance. Distance is handled separately by the website. Return only the requested structured values. If the transcript is clearly hostile, resistant, insulting, sarcastic, or boundary-setting, classify it as unfriendly. If it is caring, supportive, thankful, warm, apologetic, or gentle, classify it as friendly. If it is informational or ambiguous, classify it as neutral.'
+      },
+      {
+        role:'user',
+        content:`Speech transcript: ${text || '(empty)'}\nDistance sensor context, not tone evidence: ${distance} cm on a 0-255 cm scale.\nClassify the language only.`
+      }
+    ],
+    text:{
+      format:{
+        type:'json_schema',
+        name:'echopulse_tone_analysis',
+        strict:true,
+        schema:{
+          type:'object',
+          additionalProperties:false,
+          properties:{
+            tone:{type:'string',enum:['friendly','unfriendly','neutral']},
+            emotion:{type:'string',enum:['angry','tense','neutral','friendly','kind']},
+            intent:{type:'string',enum:['support','boundary','hostile','sarcasm','neutral','unclear']},
+            confidence:{type:'number',minimum:0,maximum:1},
+            reasoning:{type:'string'}
+          },
+          required:['tone','emotion','intent','confidence','reasoning']
+        }
+      }
+    }
+  };
+  const response=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload})});
+  if(!response.ok){
+    const errorText=await response.text().catch(()=>'');
+    throw new Error('OpenAI API '+response.status+' '+errorText.slice(0,160));
+  }
+  const data=await response.json();
+  const textOut=extractResponseText(data);
+  if(!textOut) throw new Error('OpenAI API returned no text.');
+  return JSON.parse(textOut);
+}
+function scheduleApiAnalysis(){
+  clearTimeout(state.apiTimer);
+  const text=$('#speech').value.trim();
+  if(!canUseServerApi()){setApiStatus('local reading active');return}
+  if(!text){setApiStatus('api ready, enter speech');return}
+  setApiStatus('api ready, reading soon',true);
+  state.apiTimer=setTimeout(()=>runApiAnalysis(false),850);
+}
+async function runApiAnalysis(manual=false){
+  const text=$('#speech').value.trim();
+  const distance=Number($('#distance').value);
+  if(!canUseServerApi()){setApiStatus('local reading active');return state.result}
+  if(!text){setApiStatus('api ready, enter speech');return state.result}
+  const request=++state.apiRequest;
+  setApiStatus(manual?'api reading now':'api reading',true);
+  $('#analysisForm').classList.add('is-analysing');
+  try{
+    const apiPayload=await analyzeWithApi(text,distance);
+    if(request!==state.apiRequest) return state.result;
+    const result=buildFusedResult(apiPayload,text,distance);
+    applyResult(result);
+    setApiStatus('api fused with distance',true);
+    return result;
+  }catch(error){
+    console.warn(error);
+    if(request===state.apiRequest){
+      setApiStatus('api unavailable, local reading active');
+      showStatus('API unavailable. Local reading is controlling the collar.');
+    }
+    return state.result;
+  }finally{
+    setTimeout(()=>$('#analysisForm').classList.remove('is-analysing'),90);
+  }
+}
+function runAnalysis(event,options={}){
+  if(event&&event.preventDefault) event.preventDefault();
+  state.distance=Number($('#distance').value);
+  state.speech=$('#speech').value;
+  state.apiRequest++;
+  $('#analysisForm').classList.add('is-analysing');
+  try{
+    const result=analyzeLocal(state.speech,state.distance);
+    applyResult(result);
+    if(options.scheduleApi!==false) scheduleApiAnalysis();
+    return result;
+  }finally{
+    setTimeout(()=>$('#analysisForm').classList.remove('is-analysing'),90);
+  }
+}
+async function readToneNow(event){
+  if(event&&event.preventDefault) event.preventDefault();
+  const button=$('#liveBtn');
+  button.textContent='Reading';
+  button.classList.add('active');
+  const localResult=runAnalysis(null,{scheduleApi:false});
+  const result=canUseServerApi()?await runApiAnalysis(true):localResult;
+  showStatus('Read tone: '+(result?.tone_label||localResult.tone_label));
+  clearTimeout(readToneNow.timer);
+  readToneNow.timer=setTimeout(()=>{button.textContent='Read Tone';button.classList.remove('active')},520);
+}
+function setTilt(event){
+  const rect=$('#modelShell').getBoundingClientRect();
+  const px=(event.clientX-rect.left)/rect.width-.5;
+  const py=(event.clientY-rect.top)/rect.height-.5;
+  root.style.setProperty('--tilt-y',(px*14).toFixed(2)+'deg');
+  root.style.setProperty('--tilt-x',(-py*9).toFixed(2)+'deg');
+}
+$('#analysisForm').addEventListener('submit',readToneNow);
+$('#liveBtn').addEventListener('click',readToneNow);
+$('#distance').addEventListener('input',event=>{$('#distanceValue').textContent=event.target.value+' cm';runAnalysis(event)});
+$('#distance').addEventListener('change',runAnalysis);
+$('#speech').addEventListener('input',runAnalysis);
+$('#speech').addEventListener('keyup',runAnalysis);
+$('#speech').addEventListener('change',runAnalysis);
+$('#speech').addEventListener('compositionend',runAnalysis);
+if($('#apiKey')) $('#apiKey').addEventListener('input',()=>{
+  state.apiRequest++;
+  setApiStatus(readApiKey()?'api connected':'local reading active',Boolean(readApiKey()));
+  scheduleApiAnalysis();
+});
+$('#micBtn').addEventListener('click',()=>{const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(state.listening){state.recognition&&state.recognition.stop();state.listening=false;$('#micBtn').classList.remove('active');showStatus('Microphone transcription stopped.');return}if(!SpeechRecognition){showStatus('Speech recognition is not supported in this browser.');return}const rec=new SpeechRecognition();rec.lang='zh-CN';rec.continuous=true;rec.interimResults=true;rec.onresult=event=>{let text='';for(let i=event.resultIndex;i<event.results.length;i++)text+=event.results[i][0].transcript;$('#speech').value=text.trim();runAnalysis()};rec.onend=()=>{state.listening=false;$('#micBtn').classList.remove('active')};state.recognition=rec;state.listening=true;$('#micBtn').classList.add('active');rec.start();showStatus('Listening. Speech will update the collar state.')});
+$('#modelShell').addEventListener('pointermove',setTilt);
+$('#modelShell').addEventListener('pointerleave',()=>{root.style.setProperty('--tilt-y','0deg');root.style.setProperty('--tilt-x','0deg')});
+applyResult(analyzeLocal(state.speech,state.distance));
+</script>
+
+<script type="importmap">
+{"imports":{"three":"./echopulse-vendor/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OBJLoader } from './echopulse-vendor/OBJLoader.js';
+import { OrbitControls } from './echopulse-vendor/OrbitControls.js';
+
+const canvas=document.getElementById('modelCanvas');
+const shell=document.getElementById('modelShell');
+const status=document.getElementById('modelStatus');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,.01,100);
+camera.position.set(0,1.18,6.2);
+const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.65;
+
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;
+controls.enablePan=false;
+controls.minDistance=3.5;
+controls.maxDistance=8;
+controls.autoRotate=true;
+controls.autoRotateSpeed=.55;
+controls.target.set(0,0,0);
+
+scene.add(new THREE.HemisphereLight(0xf2f7ff,0x121212,1.75));
+const key=new THREE.DirectionalLight(0xffffff,3.8);
+key.position.set(3,4,5);
+scene.add(key);
+const rim=new THREE.PointLight(0xf7f5ef,7.2,9);
+rim.position.set(-2.8,1.2,2.6);
+scene.add(rim);
+const side=new THREE.PointLight(0xf7f5ef,5.4,8);
+side.position.set(2.6,-.4,2.2);
+scene.add(side);
+
+let collar=null;
+let meshRecords=[];
+let modelBaseScale=1;
+const target={inflate:0,color:new THREE.Color('#f7f5ef'),mode:'off',emotion:'silence'};
+function resize(){
+  const rect=shell.getBoundingClientRect();
+  renderer.setSize(rect.width,rect.height,false);
+  camera.aspect=rect.width/rect.height;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(shell);
+resize();
+
+function tintMaterial(material,color){
+  material.color=color.clone().lerp(new THREE.Color('#f1f7fb'),.24);
+  material.emissive=color.clone();
+  material.emissiveIntensity=.72;
+  material.metalness=.02;
+  material.roughness=.10;
+  material.transparent=true;
+  material.opacity=.78;
+  material.depthWrite=false;
+  material.side=THREE.DoubleSide;
+  material.needsUpdate=true;
+}
+function updateMaterialColor(material,color){
+  material.color.lerp(color.clone().lerp(new THREE.Color('#f1f7fb'),.24),.08);
+  material.emissive.lerp(color,.08);
+}
+function frameModel(object){
+  const box=new THREE.Box3().setFromObject(object);
+  const size=box.getSize(new THREE.Vector3());
+  const center=box.getCenter(new THREE.Vector3());
+  object.position.sub(center);
+  const maxSize=Math.max(size.x,size.y,size.z)||1;
+  object.scale.setScalar(5.35/maxSize);
+  object.rotation.set(-.42,.08,.02);
+}
+function registerCollar(object,message){
+  if(collar&&collar!==object) scene.remove(collar);
+  collar=object;
+  frameModel(collar);
+  modelBaseScale=collar.scale.x;
+  meshRecords=[];
+  collar.traverse(child=>{
+    if(child.isMesh){
+      if(child.geometry&&!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
+      child.material=child.material.clone();
+      tintMaterial(child.material,target.color);
+      child.castShadow=false;
+      child.receiveShadow=false;
+      meshRecords.push({mesh:child,baseScale:child.scale.clone(),basePosition:child.position.clone(),baseRotation:child.rotation.clone()});
+    }
+  });
+  scene.add(collar);
+  status.textContent=message;
+  status.classList.add('ready');
+}
+function createVisibleCollar(){
+  const group=new THREE.Group();
+  const baseMaterial=new THREE.MeshPhysicalMaterial({color:0xf7f5ef,emissive:0xf7f5ef,emissiveIntensity:.55,metalness:.02,roughness:.08,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false});
+  for(let strand=0;strand<9;strand++){
+    const points=[];
+    const phase=strand*.72;
+    const radius=.92+Math.sin(strand*1.7)*.08;
+    const height=.20+strand*.012;
+    for(let i=0;i<=150;i++){
+      const t=i/150*Math.PI*2;
+      const wave=Math.sin(t*3+phase)*.18+Math.sin(t*5+phase*.6)*.07;
+      points.push(new THREE.Vector3(Math.cos(t)*radius*(1+wave*.14),Math.sin(t*2+phase)*height+Math.sin(t+phase)*.06,Math.sin(t)*radius*(.58+wave*.10)));
+    }
+    const curve=new THREE.CatmullRomCurve3(points,true,'centripetal');
+    const geometry=new THREE.TubeGeometry(curve,150,strand%3===0?.035:.023,10,true);
+    const mesh=new THREE.Mesh(geometry,baseMaterial.clone());
+    mesh.rotation.y=strand*.08;
+    mesh.rotation.z=Math.sin(strand)*.16;
+    group.add(mesh);
+  }
+  return group;
+}
+const loader=new OBJLoader();
+registerCollar(createVisibleCollar(),'restoring 3D collar model');
+loader.load('./transparent-twisted-bracelet-from-usdz-web.obj',object=>{
+  registerCollar(object,'3D model ready. Drag to rotate.');
+},event=>{
+  if(event.total){status.textContent='loading 3D collar '+Math.round(event.loaded/event.total*100)+'%'}
+},error=>{
+  console.error(error);
+  status.textContent='3D collar restored. Source model is still loading.';
+});
+
+window.addEventListener('echopulse:state',event=>{
+  const result=event.detail;
+  target.inflate=result.inflation_value/100;
+  target.color.set(result.light_color);
+  target.mode=result.light_mode;
+  target.emotion=result.emotion;
+  rim.color.copy(target.color);
+  side.color.copy(target.color);
+});
+
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  controls.update();
+  const breath=target.mode==='wave'?Math.sin(t*1.15)*.052:target.mode==='pulse'?Math.sin(t*2.0)*.034:target.mode==='contract'?Math.sin(t*3.6)*.012:0;
+  const open=.68+target.inflate*.34+breath;
+  const vertical=.72+target.inflate*.22+breath*.55;
+  if(collar){
+    collar.scale.x+=(modelBaseScale*open-collar.scale.x)*.055;
+    collar.scale.y+=(modelBaseScale*vertical-collar.scale.y)*.055;
+    collar.scale.z+=(modelBaseScale*open-collar.scale.z)*.055;
+    collar.rotation.y+=.0025+(target.inflate*.002);
+    meshRecords.forEach((record,index)=>{
+      updateMaterialColor(record.mesh.material,target.color);
+      const contract=1-target.inflate;
+      record.mesh.position.x+=(record.basePosition.x*(1-contract*.10)-record.mesh.position.x)*.05;
+      record.mesh.position.y+=(record.basePosition.y*(1-contract*.08)-record.mesh.position.y)*.05;
+      record.mesh.rotation.z=record.baseRotation.z+Math.sin(t*1.15+index)*.018*target.inflate;
+    });
+  }
+  const glow=target.mode==='off'?.18:target.mode==='contract'?.30+target.inflate*.30:.55+target.inflate*.55+((target.mode==='pulse'||target.mode==='wave')?Math.sin(t*3)*.18:0);
+  rim.intensity=2.4+glow*3.2;
+  side.intensity=1.4+glow*2.4;
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
